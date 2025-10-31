@@ -50,6 +50,6 @@ function log(color,msg){
     if(!user)return;
     const ok=await login(user,pass);
     if(ok)clearInterval(window.loginTimer);
-  },50);
+  },0);
 })();
 }catch(e){alert("エラー: "+e.message);}})();
